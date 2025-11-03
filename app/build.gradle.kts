@@ -81,4 +81,7 @@ dependencies {
     // --- Retrofit2 추가 ---
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // ✅ Jetpack Compose Navigation
+    implementation("androidx.navigation:navigation-compose:2.8.0")
 }
