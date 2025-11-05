@@ -3,8 +3,23 @@ package com.example.antiphishingapp.network
 import com.example.antiphishingapp.feature.model.AnalysisResponse
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
+import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.http.*
+
+// 문자 분석 요청/응답 모델
+data class SmsDetectRequest(
+    val sender_hash: String,
+    val urls: List<String>,
+    val texts: List<String>,
+    val received_at: Long
+)
+
+data class SmsDetectResponse(
+    val phishing_score: Double,
+    val keywords_found: List<String>,
+    val url_results: Map<String, Map<String, Any>>
+)
 
 interface ApiService {
 
@@ -45,4 +60,21 @@ interface ApiService {
     fun processRequest(
         @Part file: MultipartBody.Part
     ): Call<AnalysisResponse> // ✅ 여기만 변경됨
+
+    // ✅ 문자 내용 분석 (POST /api/sms/detect_json)
+    @POST("api/sms/detect_json")
+    fun detectSmsJson(
+        @Body payload: SmsDetectRequest
+    ): Call<SmsDetectResponse>
+
+    // ✅ 음성 파일 분석 (STT + 보이스피싱 분석)
+    @Multipart
+    @POST("api/voice-phishing/analyze-audio")
+    fun analyzeAudioFile(
+        @Part media: MultipartBody.Part,
+        @Part("language") language: RequestBody,
+        @Part("analysis_method") method: RequestBody
+    ): Call<ResponseBody>
+
+
 }

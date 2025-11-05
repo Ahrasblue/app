@@ -7,7 +7,25 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    private const val BASE_URL = "https://test-nas3.onrender.com/"  // ✅ 서버 기본 URL
+    // ✅ 서버 기본 주소
+    const val BASE_URL = "http://13.125.248.51:8000/"
+
+    // ✅ WebSocket용 주소 자동 변환
+    // http → ws, https → wss 로 자동 치환
+    val WS_BASE_URL: String
+        get() = when {
+            BASE_URL.startsWith("https://") -> BASE_URL.replaceFirst("https://", "wss://")
+            BASE_URL.startsWith("http://") -> BASE_URL.replaceFirst("http://", "ws://")
+            else -> BASE_URL
+        }
+
+    // ✅ WebSocket URL Helper
+    // 예: ApiClient.wsUrl("ws/transcribe/stream") → ws://13.125.248.51:8000/ws/transcribe/stream
+    fun wsUrl(path: String): String {
+        val base = WS_BASE_URL.removeSuffix("/")
+        val cleanPath = path.removePrefix("/")
+        return "$base/$cleanPath"
+    }
 
     // ✅ OkHttpClient 설정
     private val okHttpClient: OkHttpClient by lazy {
