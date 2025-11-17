@@ -47,31 +47,11 @@ class RealtimeCallService : Service() {
      * ✅ AudioRecord로 PCM16 모노 스트림을 WebSocket 바이너리 전송
      */
     private fun startRecordingAndStreaming() {
-        // ⚙️ WebSocket 서버 주소 — ApiClient에서 가져오기
-        val wsUrl = ApiClient.wsUrl("ws/transcribe/stream")
-        val client = OkHttpClient()
-        val request = Request.Builder().url(wsUrl).build()
 
-        Log.d("RealtimeCallService", "📡 WebSocket 연결 시도: $wsUrl")
+        // 🔥 WebSocket 연결
+        repository.connect()
 
-        webSocket = client.newWebSocket(request, object : WebSocketListener() {
-            override fun onMessage(ws: WebSocket, text: String) {
-                Log.d("RealtimeWS", "📩 서버 메시지 수신: $text")
-                if ("phishing_alert" in text) {
-                    NotificationHelper.showSmsAlert(
-                        this@RealtimeCallService,
-                        "⚠️ 보이스피싱 경고",
-                        "통화 내용에서 위험 신호가 감지되었습니다."
-                    )
-                }
-            }
-
-            override fun onFailure(ws: WebSocket, t: Throwable, response: okhttp3.Response?) {
-                Log.e("RealtimeWS", "❌ WebSocket 오류: ${t.message}")
-            }
-        })
-
-        // 🎙 녹음 설정
+        // 🎙 오디오 설정
         val sampleRate = 16000
         val bufferSize = AudioRecord.getMinBufferSize(
             sampleRate,
@@ -79,11 +59,9 @@ class RealtimeCallService : Service() {
             AudioFormat.ENCODING_PCM_16BIT
         )
 
-        // 🔒 권한 체크
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
         ) {
-            Log.e("RealtimeCallService", "❌ RECORD_AUDIO 권한이 없습니다.")
             stopSelf()
             return
         }
@@ -97,21 +75,15 @@ class RealtimeCallService : Service() {
         )
 
         audioRecord?.startRecording()
-        Log.d("RealtimeCallService", "🎧 AudioRecord 시작됨 (버퍼: $bufferSize bytes)")
 
-        // 📤 PCM 스트리밍 루프
+        // 🔥 PCM 오디오를 WebSocket 바이너리 전송
         recordJob = CoroutineScope(Dispatchers.IO).launch {
             val pcmBuffer = ByteArray(bufferSize)
-            while (isActive && audioRecord?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+            while (isActive) {
                 val bytesRead = audioRecord?.read(pcmBuffer, 0, pcmBuffer.size) ?: 0
                 if (bytesRead > 0) {
-                    try {
-                        // ✅ 최신 okio 방식: toByteString()
-                        val chunk = pcmBuffer.toByteString(0, bytesRead)
-                        repository.sendAudioChunk(chunk)
-                    } catch (e: Exception) {
-                        Log.e("RealtimeCallService", "⚠️ 청크 전송 오류: ${e.message}")
-                    }
+                    val chunk = pcmBuffer.toByteString(0, bytesRead)
+                    repository.sendPcm(chunk)
                 }
             }
         }

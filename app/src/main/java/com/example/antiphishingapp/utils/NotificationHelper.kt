@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Build
+import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -12,10 +13,13 @@ import com.example.antiphishingapp.R
 import com.example.antiphishingapp.feature.realtime.RealtimeCallService
 
 object NotificationHelper {
+
     private const val CHANNEL_ID_SMS = "sms_alerts"
     private const val CHANNEL_ID_CALL = "call_detection_channel"
 
-    // ✅ 기존 문자 알림 (그대로 유지)
+    /* ---------------------------------------------------
+     * 1. 문자 관련 알림
+     * --------------------------------------------------- */
     fun createChannel(context: Context) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (nm.getNotificationChannel(CHANNEL_ID_SMS) == null) {
@@ -35,11 +39,13 @@ object NotificationHelper {
         body: String,
         id: Int = (1000..9999).random()
     ) {
+        // Android 13+ 알림 권한 체크
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(
                 context,
                 android.Manifest.permission.POST_NOTIFICATIONS
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
             if (!granted) return
         }
 
@@ -56,9 +62,12 @@ object NotificationHelper {
         NotificationManagerCompat.from(context).notify(id, builder.build())
     }
 
-    // ✅ 새로 추가: "전화 수신 시 보이스피싱 탐지 시작" 알림
+    /* ---------------------------------------------------
+     * 2. 보이스피싱 탐지 / 전화 관련 채널
+     * --------------------------------------------------- */
     fun createCallChannel(context: Context) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
         if (nm.getNotificationChannel(CHANNEL_ID_CALL) == null) {
             val channel = NotificationChannel(
                 CHANNEL_ID_CALL,
@@ -70,18 +79,35 @@ object NotificationHelper {
                 lightColor = Color.RED
                 enableVibration(true)
             }
+
             nm.createNotificationChannel(channel)
         }
     }
 
+    /* ---------------------------------------------------
+     * 3. 탐지 시작 알림 (사용자 수동 시작 버튼)
+     * --------------------------------------------------- */
     fun showPhishingAlert(context: Context) {
         createCallChannel(context)
 
+        // Android 13+ 알림 권한 체크
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+            if (!granted) return
+        }
+
+        // RealtimeCallService 실행 Intent
         val intent = Intent(context, RealtimeCallService::class.java)
-        intent.putExtra("SERVER_URL", "wss://your-server.com/ws/transcribe/stream")
 
         val pendingIntent = PendingIntent.getService(
-            context, 0, intent, PendingIntent.FLAG_IMMUTABLE
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID_CALL)
@@ -92,6 +118,9 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
 
-        NotificationManagerCompat.from(context).notify(2001, builder.build())
+        NotificationManagerCompat.from(context).notify(
+            2001,
+            builder.build()
+        )
     }
 }
