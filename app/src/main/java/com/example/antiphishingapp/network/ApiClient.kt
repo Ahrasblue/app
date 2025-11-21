@@ -1,9 +1,14 @@
 package com.example.antiphishingapp.network
 
+import com.example.antiphishingapp.feature.model.SignupRequest
+import com.example.antiphishingapp.feature.model.UserResponse
+
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import retrofit2.Response
+
 
 object ApiClient {
 
@@ -52,4 +57,10 @@ object ApiClient {
     val apiService: ApiService by lazy {
         retrofit.create(ApiService::class.java)
     }
+
+    suspend fun signup(request: SignupRequest): Response<UserResponse> {
+        return apiService.signup(request)
+    }
+
 }
+

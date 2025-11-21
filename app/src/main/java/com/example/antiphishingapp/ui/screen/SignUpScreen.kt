@@ -1,18 +1,19 @@
 package com.example.antiphishingapp.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -20,22 +21,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.antiphishingapp.feature.viewmodel.SignUpViewModel
-import com.example.antiphishingapp.theme.AntiPhishingAppTheme
-import com.example.antiphishingapp.theme.Grayscale100
-import com.example.antiphishingapp.theme.Grayscale800
+import com.example.antiphishingapp.theme.*
 
 @Composable
 fun SignUpScreen(
     navController: NavController,
-    viewModel: SignUpViewModel = viewModel() // ViewModel 주입
+    viewModel: SignUpViewModel = viewModel()
 ) {
-    // ViewModel에 저장된 UI 상태들을 관찰하고, 변경될 때마다 화면을 자동으로 다시 그림
     val email by viewModel.email.observeAsState("")
     val password by viewModel.password.observeAsState("")
     val passwordConfirm by viewModel.passwordConfirm.observeAsState("")
@@ -43,77 +39,64 @@ fun SignUpScreen(
     val phoneNumber by viewModel.phoneNumber.observeAsState("")
     val termsChecked by viewModel.termsChecked.observeAsState(false)
     val privacyChecked by viewModel.privacyChecked.observeAsState(false)
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    val toastMessage by viewModel.toastMessage.observeAsState()
 
-    Surface {
+    val context = LocalContext.current
+    LaunchedEffect(toastMessage) {
+        toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.onToastMessageShown()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
         ) {
             AuthInputField(
-                label = "이메일*",
-                value = email,
-                onValueChange = { viewModel.onEmailChange(it) }, // ViewModel의 함수 호출
+                label = "이메일*", value = email, onValueChange = viewModel::onEmailChange,
                 placeholder = "example@email.com"
             )
             Spacer(modifier = Modifier.height(20.dp))
 
             AuthInputField(
-                label = "비밀번호*",
-                value = password,
-                onValueChange = { viewModel.onPasswordChange(it) },
-                placeholder = "특수문자 포함. 8자 이상 입력해주세요",
-                isPassword = true
+                label = "비밀번호*", value = password, onValueChange = viewModel::onPasswordChange,
+                placeholder = "특수문자 포함. 8자 이상 입력해주세요", isPassword = true
             )
             Spacer(modifier = Modifier.height(20.dp))
 
             AuthInputField(
-                label = "비밀번호 확인*",
-                value = passwordConfirm,
-                onValueChange = { viewModel.onPasswordConfirmChange(it) },
-                placeholder = "비밀번호를 다시 입력해주세요",
-                isPassword = true
+                label = "비밀번호 확인*", value = passwordConfirm, onValueChange = viewModel::onPasswordConfirmChange,
+                placeholder = "비밀번호를 다시 입력해주세요", isPassword = true
             )
             Spacer(modifier = Modifier.height(20.dp))
 
             AuthInputField(
-                label = "이름*",
-                value = name,
-                onValueChange = { viewModel.onNameChange(it) },
-                placeholder = "example@email.com"
+                label = "이름*", value = name, onValueChange = viewModel::onNameChange,
+                placeholder = "이름을 입력해주세요"
             )
             Spacer(modifier = Modifier.height(20.dp))
 
             AuthInputField(
-                label = "전화번호*",
-                value = phoneNumber,
-                onValueChange = { viewModel.onPhoneNumberChange(it) },
-                placeholder = "010-1234-5678",
-                keyboardType = KeyboardType.Phone
+                label = "전화번호*", value = phoneNumber, onValueChange = viewModel::onPhoneNumberChange,
+                placeholder = "010-1234-5678", keyboardType = KeyboardType.Phone
             )
-
             Spacer(modifier = Modifier.height(24.dp))
 
-            AgreementCheckBox(
-                text = "* 이용약관 동의",
-                checked = termsChecked,
-                onCheckedChange = { viewModel.onTermsCheckedChange(it) }
-            )
+            AgreementCheckBox(text = "* 이용약관 동의", checked = termsChecked, onCheckedChange = viewModel::onTermsCheckedChange)
             Spacer(modifier = Modifier.height(8.dp))
-            AgreementCheckBox(
-                text = "* 개인정보 처리방침 동의",
-                checked = privacyChecked,
-                onCheckedChange = { viewModel.onPrivacyCheckedChange(it) }
-            )
+            AgreementCheckBox(text = "* 개인정보 처리방침 동의", checked = privacyChecked, onCheckedChange = viewModel::onPrivacyCheckedChange)
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { viewModel.onSignUpClicked() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                onClick = viewModel::onSignUpClicked,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                enabled = !isLoading
             ) {
                 Text(
                     text = "회원가입하기",
@@ -129,8 +112,12 @@ fun SignUpScreen(
                     .align(Alignment.CenterHorizontally)
                     .clickable { /* TODO: 로그인 화면으로 이동 */ },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.tertiary
+                color = Grayscale600
             )
+        }
+
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
     }
 }
@@ -156,7 +143,7 @@ private fun AuthInputField(
                 Text(
                     text = placeholder,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = Grayscale600
                 )
             },
             shape = RoundedCornerShape(12.dp),
@@ -200,7 +187,7 @@ private fun CustomCheckbox(checked: Boolean) {
         modifier = Modifier
             .size(20.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary),
+            .background(if (checked) MaterialTheme.colorScheme.primary else Grayscale300),
         contentAlignment = Alignment.Center
     ) {
 

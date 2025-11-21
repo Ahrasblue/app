@@ -1,4 +1,4 @@
-package com.example.antiphishingapp.feature.screen
+package com.example.antiphishingapp.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

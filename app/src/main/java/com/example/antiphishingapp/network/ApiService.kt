@@ -1,11 +1,19 @@
 package com.example.antiphishingapp.network
 
 import com.example.antiphishingapp.feature.model.AnalysisResponse
+import com.example.antiphishingapp.feature.model.SignupRequest
+import com.example.antiphishingapp.feature.model.UserResponse
+
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.http.*
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.POST
+
+
 
 // 문자 분석 요청/응답 모델
 data class SmsDetectRequest(
@@ -76,5 +84,8 @@ interface ApiService {
         @Part("analysis_method") method: RequestBody
     ): Call<ResponseBody>
 
+
+    @POST("auth/signup")
+    suspend fun signup(@Body request: SignupRequest): Response<UserResponse>
 
 }

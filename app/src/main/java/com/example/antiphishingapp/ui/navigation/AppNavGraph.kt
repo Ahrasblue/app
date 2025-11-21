@@ -13,6 +13,7 @@ import com.example.antiphishingapp.ui.screen.RealtimeScreen
 import com.example.antiphishingapp.ui.main.MainScreen
 import com.example.antiphishingapp.ui.screen.SignUpScreen
 
+
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     val analysisResult = remember { mutableStateOf<AnalysisResponse?>(null) }
