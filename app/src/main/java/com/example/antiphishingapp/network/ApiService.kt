@@ -3,6 +3,8 @@ package com.example.antiphishingapp.network
 import com.example.antiphishingapp.feature.model.AnalysisResponse
 import com.example.antiphishingapp.feature.model.SignupRequest
 import com.example.antiphishingapp.feature.model.UserResponse
+import com.example.antiphishingapp.feature.model.LoginRequest
+import com.example.antiphishingapp.feature.model.TokenResponse
 
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -87,5 +89,23 @@ interface ApiService {
 
     @POST("auth/signup")
     suspend fun signup(@Body request: SignupRequest): Response<UserResponse>
+
+    // 로그인 (POST /auth/login)
+    @POST("auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<TokenResponse>
+
+    // 소셜 로그인 코드를 토큰으로 교환하는 API 함수
+    @FormUrlEncoded // application/x-www-form-urlencoded 포맷을 서버가 요구할 수 있으므로 추가
+    @POST("auth/kakao/callback")
+    suspend fun exchangeKakaoCode(
+        @Field("code") code: String
+    ): Response<TokenResponse>
+
+    @FormUrlEncoded
+    @POST("auth/naver/callback")
+    suspend fun exchangeNaverCode(
+        @Field("code") code: String,
+        @Field("state") state: String
+    ): Response<TokenResponse>
 
 }

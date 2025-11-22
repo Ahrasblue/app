@@ -64,6 +64,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation("androidx.browser:browser:1.7.0") // Custom Tabs 사용을 위해 추가
+
     implementation(project(":sdk")) //OpenCV 사용 위해 의존성 추가
 
     implementation("androidx.activity:activity-compose:1.9.0")

@@ -8,26 +8,40 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.antiphishingapp.feature.model.AnalysisResponse
+import com.example.antiphishingapp.feature.viewmodel.LoginViewModel
+import com.example.antiphishingapp.feature.viewmodel.SocialLoginViewModel
 import com.example.antiphishingapp.ui.screen.AnalysisScreen
 import com.example.antiphishingapp.ui.screen.RealtimeScreen
 import com.example.antiphishingapp.ui.main.MainScreen
 import com.example.antiphishingapp.ui.screen.SignUpScreen
-
+import com.example.antiphishingapp.ui.screen.TitleScreen
+import com.example.antiphishingapp.ui.screen.LoginScreen
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(navController: NavHostController, startRoute: String) {
     val analysisResult = remember { mutableStateOf<AnalysisResponse?>(null) }
 
     NavHost(
         navController = navController,
-        startDestination = "main"
+        startDestination = startRoute
     ) {
+        // 타이틀 화면
+        composable("title") {
+            TitleScreen(navController = navController)
+        }
+
+        // 로그인 화면
+        composable("login") {
+            LoginScreen(navController = navController, viewModel = viewModel<LoginViewModel>())
+        }
+
         // ✅ 메인 화면 (문서 업로드)
         composable("main") {
             MainScreen(
                 navController = navController,
                 onAnalysisComplete = { result ->
                     analysisResult.value = result
+                    navController.navigate("analysis")
                 }
             )
         }
