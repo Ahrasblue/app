@@ -25,15 +25,18 @@ object ApiClient {
         }
 
     // ✅ WebSocket URL Helper
-    // 예: ApiClient.wsUrl("api/transcribe/ws?sr=16000")
+    // 경로(path)를 넣으면 전체 wss 주소를 만들어주는 함수
     fun wsUrl(path: String): String {
         val base = WS_BASE_URL.removeSuffix("/")
         val cleanPath = path.removePrefix("/")
         return "$base/$cleanPath"
     }
 
-    // 🔥 사용 예시
-    // val url = ApiClient.wsUrl("api/transcribe/ws?sr=16000")
+    // 🔥 [수정됨] 요청하신 STT 전용 WebSocket URL
+    // 결과: "wss://antiphishingstt.p-e.kr/api/transcribe/ws?sr=16000&lang=ko-KR"
+    val TRANSCRIPTION_WS_URL: String
+        get() = wsUrl("api/transcribe/ws?sr=16000&lang=ko-KR")
+
 
     // ✅ OkHttpClient 설정
     private val okHttpClient: OkHttpClient by lazy {
@@ -61,6 +64,4 @@ object ApiClient {
     suspend fun signup(request: SignupRequest): Response<UserResponse> {
         return apiService.signup(request)
     }
-
 }
-
