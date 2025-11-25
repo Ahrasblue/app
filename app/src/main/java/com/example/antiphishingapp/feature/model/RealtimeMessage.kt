@@ -1,37 +1,17 @@
 package com.example.antiphishingapp.feature.model
 
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
-
 data class RealtimeMessage(
-    val kind: String,  // "state", "partial", "final", "risk"
-    val t: Double,
+    val type: String, // "transcription" or "phishing_alert"
     val text: String? = null,
+    val is_final: Boolean? = null,
 
-    val immediate: Immediate? = null,
-    val comprehensive: Comprehensive? = null
-) {
-    companion object {
-        fun fromJson(json: String): RealtimeMessage {
-            return Gson().fromJson(json, RealtimeMessage::class.java)
-        }
-    }
-}
+    val alert_type: String? = null,
+    val risk_level: Int? = null,
+    val risk_probability: Double? = null,
+    val phishing_type: String? = null,
+    val keywords: List<String>? = null,
 
-data class Immediate(
-    val level: Int,
-    val probability: Double,
-    @SerializedName("phishing_type")
-    val phishingType: String?,
-    val keywords: List<String>?,
-    val method: String?
-)
-
-data class Comprehensive(
-    @SerializedName("is_phishing")
-    val isPhishing: Boolean,
-    val confidence: Double,
-    val method: String?,
-    @SerializedName("analyzed_length")
-    val analyzedLength: Int?
+    val is_phishing: Boolean? = null,
+    val confidence: Double? = null,
+    val analyzed_length: Int? = null
 )
