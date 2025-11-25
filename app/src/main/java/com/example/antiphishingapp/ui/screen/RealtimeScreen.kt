@@ -28,14 +28,8 @@ fun RealtimeScreen(
             .padding(16.dp)
     ) {
 
-        if (latestMessage?.kind == "state") {
-            PhoneAlertCard(
-                onStartDetect = {},
-                onDismiss = { viewModel.clear() }
-            )
-        }
-
-        if (latestMessage?.kind == "partial" || latestMessage?.kind == "final") {
+        // 1️⃣ 음성 인식 중간/최종 텍스트
+        if (latestMessage?.type == "transcription") {
             Text(
                 text = latestMessage?.text ?: "",
                 style = MaterialTheme.typography.titleMedium,
@@ -43,23 +37,39 @@ fun RealtimeScreen(
             )
         }
 
-        if (latestMessage?.kind == "risk") {
-            val immediate = latestMessage?.immediate
-            val level = immediate?.level ?: 0
-            val probability = immediate?.probability ?: 0.0
+        // 2️⃣ 즉시 탐지 (키워드 기반)
+        if (latestMessage?.type == "phishing_alert" &&
+            latestMessage?.alert_type == "immediate") {
 
             RiskAlertCard(
-                riskLevel = level,
-                probability = probability,
+                riskLevel = latestMessage?.risk_level ?: 0,
+                probability = (latestMessage?.risk_probability ?: 0.0) * 100,
                 onDismiss = { viewModel.clear() }
             )
         }
 
-        if (latestMessage?.kind == "sms_alert") {
-            MessageAlertCard(
-                onCheckKeyword = {},
-                onDismiss = { viewModel.clear() }
-            )
+        // 3️⃣ 종합 탐지 결과
+        if (latestMessage?.type == "phishing_alert" &&
+            latestMessage?.alert_type == "comprehensive") {
+
+            val confidence = (latestMessage?.confidence ?: 0.0) * 100
+            Card(
+                shape = RoundedCornerShape(26.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF3FF)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(
+                        text = if (latestMessage?.is_phishing == true)
+                            "🚨 보이스피싱 탐지됨 (${String.format("%.1f", confidence)}%)"
+                        else
+                            "✅ 안전한 통화로 판단됨 (${String.format("%.1f", confidence)}%)",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            }
         }
     }
 }
@@ -77,7 +87,6 @@ fun RiskAlertCard(
             .fillMaxWidth()
             .padding(20.dp)
     ) {
-
         Column(
             modifier = Modifier.padding(24.dp)
         ) {
