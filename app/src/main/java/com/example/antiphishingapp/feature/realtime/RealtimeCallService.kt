@@ -23,7 +23,6 @@ import android.media.audiofx.AcousticEchoCanceler
 import android.media.audiofx.AutomaticGainControl
 import androidx.annotation.RequiresPermission
 
-
 class RealtimeCallService : Service() {
 
     private var audioRecord: AudioRecord? = null
@@ -203,10 +202,38 @@ class RealtimeCallService : Service() {
         super.onDestroy()
         Log.d("RealtimeCallService", "🛑 서비스 종료 및 리소스 정리")
         try {
+            // 녹음 중단 및 리소스 해제
             recordJob?.cancel()
-            audioRecord?.stop()
-            audioRecord?.release()
-            repository.disconnect()
+            try {
+                audioRecord?.stop()
+            } catch (e: Exception) {
+                Log.w("RealtimeCallService", "audioRecord stop 실패: ${e.message}")
+            }
+            try {
+                audioRecord?.release()
+            } catch (e: Exception) {
+                Log.w("RealtimeCallService", "audioRecord release 실패: ${e.message}")
+            }
+
+            // 1) STT에 '끝' 신호 보내기 -> 2) 잠깐 대기 -> 3) disconnect
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    Log.d("RealtimeCallService", "📤 Sending __END__ to server")
+                    repository.sendText("__END__")
+                } catch (e: Exception) {
+                    Log.w("RealtimeCallService", "__END__ 전송 예외: ${e.message}")
+                }
+
+                // 서버가 STT를 flush할 수 있도록 짧게 대기 (200~500ms 권장)
+                delay(300)
+
+                try {
+                    Log.d("RealtimeCallService", "📴 Calling repository.disconnect()")
+                    repository.disconnect()
+                } catch (e: Exception) {
+                    Log.w("RealtimeCallService", "disconnect 예외: ${e.message}")
+                }
+            }
         } catch (e: Exception) {
             Log.e("RealtimeCallService", "리소스 해제 오류: ${e.message}")
         }

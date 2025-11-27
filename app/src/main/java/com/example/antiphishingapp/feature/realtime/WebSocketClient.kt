@@ -21,6 +21,7 @@ class WebSocketClient(
             }
 
             override fun onMessage(ws: WebSocket, text: String) {
+                Log.d("WebSocketClient", "📩 수신: $text")   // ← 이 줄 추가
                 try {
                     val msg = gson.fromJson(text, RealtimeMessage::class.java)
                     onMessageReceived(msg)
