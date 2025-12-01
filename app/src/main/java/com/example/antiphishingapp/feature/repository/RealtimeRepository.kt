@@ -14,7 +14,14 @@ class RealtimeRepository {
 
     private var client: OkHttpClient? = null
     private var webSocket: WebSocket? = null
-    private var isConnected = false
+
+    // 내부 관리용
+    private var isConnected: Boolean = false
+
+    // 외부에서 읽기 전용
+    val connected: Boolean
+        get() = isConnected
+
     private var pingJob: Job? = null
 
     private val gson = Gson()
@@ -38,7 +45,6 @@ class RealtimeRepository {
                 Log.d("RealtimeRepository", "✅ WebSocket connected: $url")
                 isConnected = true
 
-                // ping 주기
                 pingJob = CoroutineScope(Dispatchers.IO).launch {
                     while (isActive) {
                         delay(15_000)
@@ -63,7 +69,6 @@ class RealtimeRepository {
             }
 
             override fun onMessage(ws: WebSocket, bytes: ByteString) {
-                // 만약 서버가 바이너리 메시지를 보낸다면 처리 (현재는 텍스트 JSON만 사용)
                 Log.d("RealtimeRepository", "📥 바이너리 메시지 수신 (${bytes.size} bytes)")
             }
 
@@ -74,13 +79,11 @@ class RealtimeRepository {
 
             override fun onClosing(ws: WebSocket, code: Int, reason: String) {
                 Log.w("RealtimeRepository", "⚠️ Closing (server): $code / $reason")
-                // 서버가 닫으려는 경우 안전하게 close 처리
                 close()
             }
 
             override fun onClosed(ws: WebSocket, code: Int, reason: String) {
                 Log.w("RealtimeRepository", "⚠️ Closed (final): $code / $reason")
-                // ensure cleanup
                 close()
             }
         })
@@ -89,6 +92,7 @@ class RealtimeRepository {
     fun sendPcm(chunk: ByteString) {
         if (isConnected) {
             try {
+                Log.d("RealtimeRepository", "sendPcm size=${chunk.size} connected=$isConnected")
                 webSocket?.send(chunk)
             } catch (e: Exception) {
                 Log.w("RealtimeRepository", "PCM 전송 실패: ${e.message}")
@@ -98,9 +102,6 @@ class RealtimeRepository {
         }
     }
 
-    /**
-     * 텍스트 프레임 전송 (예: "__END__" 같은 제어 메시지)
-     */
     fun sendText(message: String) {
         if (isConnected) {
             try {
@@ -119,18 +120,14 @@ class RealtimeRepository {
     fun close() {
         try {
             if (!isConnected) {
-                // 이미 정리된 상태일 수 있음
                 pingJob?.cancel()
                 client = null
                 return
             }
 
             isConnected = false
-            try {
-                pingJob?.cancel()
-            } catch (e: Exception) {
-                Log.w("RealtimeRepository", "pingJob cancel 실패: ${e.message}")
-            }
+
+            try { pingJob?.cancel() } catch (_: Exception) {}
 
             try {
                 webSocket?.close(1000, "종료")
@@ -138,10 +135,10 @@ class RealtimeRepository {
                 Log.w("RealtimeRepository", "webSocket close 실패: ${e.message}")
             }
 
-            // client 의 executorService 종료는 여기서 하지 않음 (재사용 가능하도록)
             client = null
             webSocket = null
             Log.d("RealtimeRepository", "🟢 WebSocket fully closed and resources released")
+
         } catch (e: Exception) {
             Log.e("RealtimeRepository", "close 실패: ${e.message}")
         }

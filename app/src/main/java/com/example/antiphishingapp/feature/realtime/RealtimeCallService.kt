@@ -59,7 +59,7 @@ class RealtimeCallService : Service() {
         }
 
         val audioSource = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaRecorder.AudioSource.VOICE_RECOGNITION
+            MediaRecorder.AudioSource.VOICE_COMMUNICATION
         } else {
             MediaRecorder.AudioSource.VOICE_COMMUNICATION
         }
@@ -164,6 +164,12 @@ class RealtimeCallService : Service() {
             val buffer = ByteArray(2048)
             while (isActive) {
                 val bytesRead = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+                Log.d(
+                    "RealtimeCallService",
+                    "bytesRead=$bytesRead, connected=${repository.connected}"
+                )
+                val maxVal = buffer.maxOrNull()
+                Log.d("AudioDebug", "maxVal=$maxVal")
                 if (bytesRead > 0) {
                     val chunk: ByteString = buffer.toByteString(0, bytesRead)
                     repository.sendPcm(chunk)
