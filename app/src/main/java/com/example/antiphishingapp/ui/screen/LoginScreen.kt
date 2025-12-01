@@ -97,7 +97,7 @@ fun LoginScreen(
             LoginInputField(
                 value = email,
                 onValueChange = viewModel::onEmailChange,
-                label = "아이디",
+                label = "이메일",
                 icon = Icons.Default.Person,
                 keyboardType = KeyboardType.Email,
                 enabled = !isLoading
