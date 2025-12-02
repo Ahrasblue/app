@@ -26,6 +26,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.antiphishingapp.feature.viewmodel.SignUpViewModel
 import com.example.antiphishingapp.theme.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.foundation.interaction.PressInteraction
 
 @Composable
 fun SignUpScreen(
@@ -101,11 +104,30 @@ fun SignUpScreen(
             AgreementCheckBox(text = "* 개인정보 처리방침 동의", checked = privacyChecked, onCheckedChange = viewModel::onPrivacyCheckedChange)
             Spacer(modifier = Modifier.height(32.dp))
 
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHovered = remember { mutableStateOf(false) }
+            val isPressed = remember { mutableStateOf(false) }
+
+            LaunchedEffect(interactionSource) {
+                interactionSource.interactions.collect { interaction ->
+                    when (interaction) {
+                        is HoverInteraction.Enter -> isHovered.value = true
+                        is HoverInteraction.Exit -> isHovered.value = false
+                        is PressInteraction.Press -> isPressed.value = true
+                        is PressInteraction.Release, is PressInteraction.Cancel -> isPressed.value = false
+                    }
+                }
+            }
+
             Button(
                 onClick = viewModel::onSignUpClicked,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                interactionSource = interactionSource,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isPressed.value || isHovered.value) Primary900 else Primary300,
+                    contentColor = if (isPressed.value || isHovered.value) Primary100 else Primary900
+                ),
                 enabled = !isLoading
             ) {
                 Text(
@@ -197,7 +219,7 @@ private fun CustomCheckbox(checked: Boolean) {
         modifier = Modifier
             .size(20.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(if (checked) MaterialTheme.colorScheme.primary else Grayscale300),
+            .background(if (checked) Primary900 else Grayscale300),
         contentAlignment = Alignment.Center
     ) {
 
