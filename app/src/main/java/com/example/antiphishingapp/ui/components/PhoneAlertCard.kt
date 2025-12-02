@@ -23,7 +23,7 @@ fun PhoneAlertCard(
 ) {
     Card(
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFCFBFF)),
         modifier = Modifier
             .fillMaxWidth()
             .padding(20.dp)
@@ -63,7 +63,7 @@ fun PhoneAlertCard(
                     shape = RoundedCornerShape(18.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("자동 탐지 시작", color = Color.White, fontSize = 14.sp)
+                    Text("탐지 시작", color = Color.White, fontSize = 14.sp)
                 }
 
                 Spacer(Modifier.width(12.dp))
