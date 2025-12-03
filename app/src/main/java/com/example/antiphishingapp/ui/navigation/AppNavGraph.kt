@@ -16,6 +16,7 @@ import com.example.antiphishingapp.ui.main.MainScreen
 import com.example.antiphishingapp.ui.screen.SignUpScreen
 import com.example.antiphishingapp.ui.screen.TitleScreen
 import com.example.antiphishingapp.ui.screen.LoginScreen
+import com.example.antiphishingapp.feature.viewmodel.MainViewModel
 
 @Composable
 fun AppNavGraph(navController: NavHostController, startRoute: String) {
@@ -35,7 +36,7 @@ fun AppNavGraph(navController: NavHostController, startRoute: String) {
             LoginScreen(navController = navController, viewModel = viewModel<LoginViewModel>())
         }
 
-        // ✅ 메인 화면 (문서 업로드)
+        // ✅ 메인 화면
         composable("main") {
             MainScreen(
                 navController = navController,
