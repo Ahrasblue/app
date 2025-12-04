@@ -16,7 +16,6 @@ import com.example.antiphishingapp.ui.main.MainScreen
 import com.example.antiphishingapp.ui.screen.SignUpScreen
 import com.example.antiphishingapp.ui.screen.TitleScreen
 import com.example.antiphishingapp.ui.screen.LoginScreen
-import com.example.antiphishingapp.feature.viewmodel.MainViewModel
 
 @Composable
 fun AppNavGraph(navController: NavHostController, startRoute: String) {
