@@ -91,7 +91,7 @@ class SocialLoginViewModel(
                 when (uri.scheme) {
                     "kakao" -> {
                         // 카카오 로그인 처리
-                        authRepository.exchangeCodeForToken("kakao", code, null)
+                        authRepository.exchangeCodeForToken("kakao", code, null, true)
                         _loginResult.emit(true)
                     }
                     // 네이버 리다이렉트 URI의 스키마 (예: antiphishingapp)
@@ -101,7 +101,7 @@ class SocialLoginViewModel(
                         authRepository.clearValue(NAVER_STATE_KEY) // 사용 후 state 삭제
 
                         if (state != null && state == savedState) {
-                            authRepository.exchangeCodeForToken("naver", code, state)
+                            authRepository.exchangeCodeForToken("naver", code, state, true)
                             _loginResult.emit(true)
                         } else {
                             Log.e("SOCIAL_LOGIN", "Naver state mismatch (CSRF warning). State: $state, Saved: $savedState")
