@@ -102,7 +102,7 @@ fun FileUploadScreen(
 }
 
 @Composable
-fun TopBar() {
+private fun TopBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -165,7 +165,7 @@ fun FileUploadHeader() {
             color = Grayscale900
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
             text = buildAnnotatedString {
@@ -184,7 +184,7 @@ fun FileUploadHeader() {
 }
 
 @Composable
-fun ActionCard(
+private fun ActionCard(
     title: String,
     description: String,
     @DrawableRes iconRes: Int,
@@ -243,7 +243,7 @@ fun ActionCard(
 }
 
 @Composable
-fun HelpSection(modifier: Modifier = Modifier) {
+private fun HelpSection(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center

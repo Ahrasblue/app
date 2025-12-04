@@ -97,7 +97,7 @@ fun MainScreen(
                 title = "탐지 기록 확인",
                 description = "의심 전화 및 문자를 탐지하고,\n위험도를 확인할 수 있습니다.",
                 iconRes = R.drawable.mainscreen02,
-                onClick = { /* No action */ }
+                onClick = { navController.navigate("detectHistory") }
             )
 
             // 하단 도움말
@@ -197,7 +197,7 @@ fun ActionCard(
             .fillMaxWidth()
             .clickable(
                 interactionSource = interactionSource,
-                indication = null, // 기본 클릭 효과(물결) 제거
+                indication = null,
                 onClick = onClick
             ),
         shape = RoundedCornerShape(15.dp),
@@ -215,7 +215,7 @@ fun ActionCard(
                         fontFamily = NPSFont,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = titleColor // 동적 색상 적용
+                    color = titleColor
                 )
                 Spacer(Modifier.height(20.dp))
                 Text(
@@ -223,7 +223,7 @@ fun ActionCard(
                     style = AppTypography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = descriptionColor, // 동적 색상 적용
+                    color = descriptionColor,
                     lineHeight = 20.sp
                 )
             }

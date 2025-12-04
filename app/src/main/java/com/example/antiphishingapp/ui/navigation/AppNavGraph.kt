@@ -14,6 +14,7 @@ import com.example.antiphishingapp.ui.screen.FileUploadScreen
 import com.example.antiphishingapp.ui.screen.AnalysisScreen
 import com.example.antiphishingapp.ui.screen.RealtimeScreen
 import com.example.antiphishingapp.ui.main.MainScreen
+import com.example.antiphishingapp.ui.screen.DetectHistoryScreen
 import com.example.antiphishingapp.ui.screen.SignUpScreen
 import com.example.antiphishingapp.ui.screen.TitleScreen
 import com.example.antiphishingapp.ui.screen.LoginScreen
@@ -50,6 +51,11 @@ fun AppNavGraph(navController: NavHostController, startRoute: String) {
         // ✅ 파일 업로드 화면
         composable("fileUpload") {
             FileUploadScreen(navController = navController)
+        }
+
+        // ✅ 탐지 기록 화면
+        composable("detectHistory") {
+            DetectHistoryScreen(navController = navController)
         }
 
         // ✅ 회원가입 화면
