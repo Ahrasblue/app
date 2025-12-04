@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.example.antiphishingapp.data.local.AppDatabase
+import com.example.antiphishingapp.data.local.SmsEntity
 
 class SmsReceiver : BroadcastReceiver() {
 
@@ -70,6 +72,7 @@ class SmsReceiver : BroadcastReceiver() {
                     if (response.isSuccessful) {
                         val result = response.body()
                         val score = (result?.phishing_score as? Number)?.toInt() ?: 0
+                        val foundKeywords = result?.keywords_found ?: emptyList()
                         Log.d(
                             "SmsReceiver",
                             "✅ Phishing=${result?.phishing_score}, keywords=${result?.keywords_found}, urls=${result?.url_results?.size}"
@@ -83,6 +86,20 @@ class SmsReceiver : BroadcastReceiver() {
                             }
                             context.startActivity(popupIntent)
                             Log.d("SmsReceiver", "🚨 위험 감지! 알림창 실행됨 (점수: $score)")
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                val db = AppDatabase.getDatabase(context)
+                                db.smsDao().insertSms(
+                                    SmsEntity(
+                                        sender = sender,
+                                        content = rawText,
+                                        receivedDate = System.currentTimeMillis(),
+                                        riskScore = score,
+                                        keywords = foundKeywords
+                                    )
+                                )
+                                Log.d("SmsReceiver", "💾 DB 저장 완료")
+                            }
                         } else {
                             Log.d("SmsReceiver", "🛡️ 안전한 문자입니다. 알림을 띄우지 않습니다. (점수: $score)")
                         }
