@@ -1,72 +1,86 @@
 package com.example.antiphishingapp.ui.screen
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.antiphishingapp.R
-import com.example.antiphishingapp.theme.AntiPhishingAppTheme
-import com.example.antiphishingapp.theme.AppTypography
-import com.example.antiphishingapp.theme.Grayscale300
-import com.example.antiphishingapp.theme.Grayscale600
-import com.example.antiphishingapp.theme.Grayscale700
-import com.example.antiphishingapp.theme.Grayscale800
-import com.example.antiphishingapp.theme.Grayscale900
-import com.example.antiphishingapp.theme.NPSFont
-import com.example.antiphishingapp.theme.Primary100
-import com.example.antiphishingapp.theme.Primary200
-import com.example.antiphishingapp.theme.Primary300
-import com.example.antiphishingapp.theme.Primary900
+import com.example.antiphishingapp.feature.model.AnalysisResponse
+import com.example.antiphishingapp.feature.viewmodel.AnalysisViewModel
+import com.example.antiphishingapp.theme.*
 import com.example.antiphishingapp.viewmodel.AuthViewModel
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 @Composable
 fun FileUploadScreen(
     navController: NavController,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    // 🔹 AppNavGraph에서 주입받도록 변경 (viewModel() 제거)
+    analysisViewModel: AnalysisViewModel,
+    // 🔹 업로드 성공 시 결과를 NavGraph 쪽으로 넘겨주는 콜백
+    onUploadSuccess: (AnalysisResponse) -> Unit
 ) {
     val userState by authViewModel.user.collectAsState()
     val userName = userState?.fullName ?: "사용자"
+
+    val loading by analysisViewModel.loading.observeAsState(false)
+    val result by analysisViewModel.result.observeAsState()
+    val error by analysisViewModel.error.observeAsState()
+
+    val context = LocalContext.current
+
+    // 🔹 이미지 선택 런처
+    val pickImageLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) {
+                val multipart = uriToMultipart("file", uri, context)
+                analysisViewModel.analyzeDocument(multipart)
+            }
+        }
+
+    // 🔹 분석 완료 → 상위(AppNavGraph)로 결과 전달 후, ViewModel 상태 초기화
+    LaunchedEffect(result) {
+        result?.let { analysis ->
+            onUploadSuccess(analysis)          // imageUploadResult 에 넣고
+            analysisViewModel.resetResult()   // 다음 호출 대비 초기화
+        }
+    }
+
+    // (에러 토스트 띄우고 싶으면 여기서 처리 가능)
+    LaunchedEffect(error) {
+        // error?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = Primary100
@@ -85,25 +99,52 @@ fun FileUploadScreen(
             FileUploadHeader()
             Spacer(modifier = Modifier.height(32.dp))
 
+            // 🔹 이미지 업로드 버튼 – 사진 선택 → 서버 업로드
             ActionCard(
                 title = "이미지 업로드",
                 description = "의심되는 문서 스캔 이미지를 첨부해\n위험도 확인이 가능합니다.",
                 iconRes = R.drawable.image_upload,
-                onClick = { /* TODO: 이미지 업로드 로직으로 이동 */ }
+                onClick = { pickImageLauncher.launch("image/*") }
             )
+
             Spacer(modifier = Modifier.height(25.dp))
 
+            // 음성 업로드 버튼 (추후 구현)
             ActionCard(
                 title = "음성 업로드",
                 description = "의심되는 통화 녹음 파일을 첨부해\n위험도 확인이 가능합니다.",
                 iconRes = R.drawable.voice_upload,
-                onClick = { /* TODO: 음성 파일 업로드 로직으로 이동 */ }
+                onClick = { /* 앞으로 구현할 음성 업로드 */ }
             )
 
             Spacer(modifier = Modifier.weight(1f))
             HelpSection(modifier = Modifier.padding(vertical = 64.dp))
         }
+
+        // 🔹 로딩 오버레이
+        if (loading) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Grayscale300.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Primary900)
+            }
+        }
     }
+}
+
+/**
+ * URI → MultipartBody.Part 변환
+ */
+fun uriToMultipart(field: String, uri: Uri, context: Context): MultipartBody.Part {
+    val inputStream = context.contentResolver.openInputStream(uri)!!
+    val bytes = inputStream.readBytes()
+    inputStream.close()
+
+    val requestBody = bytes.toRequestBody("image/*".toMediaType())
+    return MultipartBody.Part.createFormData(field, "upload.jpg", requestBody)
 }
 
 @Composable
@@ -115,7 +156,7 @@ private fun TopBar(userName: String) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            modifier = Modifier.clickable { /* No action */ },
+            modifier = Modifier.clickable { },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -132,7 +173,7 @@ private fun TopBar(userName: String) {
             )
         }
         Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = { /* No action */ }) {
+        IconButton(onClick = { }) {
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "Menu",
@@ -154,13 +195,9 @@ fun FileUploadHeader() {
 
         Text(
             text = buildAnnotatedString {
-                withStyle(style = SpanStyle(color = Primary900)) {
-                    append("파일")
-                }
+                withStyle(SpanStyle(color = Primary900)) { append("파일") }
                 append("을 ")
-                withStyle(style = SpanStyle(color = Primary900)) {
-                    append("업로드")
-                }
+                withStyle(SpanStyle(color = Primary900)) { append("업로드") }
                 append("하여")
             },
             style = AppTypography.headlineLarge.copy(
@@ -174,9 +211,7 @@ fun FileUploadHeader() {
 
         Text(
             text = buildAnnotatedString {
-                withStyle(style = SpanStyle(color = Primary900)) {
-                    append("의심 정황")
-                }
+                withStyle(SpanStyle(color = Primary900)) { append("의심 정황") }
                 append("을 확인해요.")
             },
             style = AppTypography.headlineLarge.copy(
@@ -237,7 +272,7 @@ private fun ActionCard(
                     lineHeight = 20.sp
                 )
             }
-            Spacer(Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(16.dp))
             Image(
                 painter = painterResource(id = iconRes),
                 contentDescription = title,
@@ -255,7 +290,7 @@ private fun HelpSection(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = "도움이 필요하신가요?",
-            modifier = Modifier.clickable { /* No action */ },
+            modifier = Modifier.clickable { },
             style = AppTypography.bodyMedium,
             color = Grayscale600
         )
