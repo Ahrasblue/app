@@ -16,6 +16,7 @@ class AuthRepository(private val context: Context) {
     private val PREFS_NAME = "secure_auth_prefs"
     private val KEY_ACCESS_TOKEN = "access_token"
     private val KEY_REFRESH_TOKEN = "refresh_token"
+    private val KEY_IS_AUTO_LOGIN = "is_auto_login"
 
     private val securePrefs by lazy {
         // MasterKey 생성 (Android KeyStore 사용)
@@ -51,6 +52,20 @@ class AuthRepository(private val context: Context) {
     }
 
     /**
+     * 로그인 성공 후 토큰과 자동 로그인 체크 여부를 저장
+     * @param tokenResponse 서버로부터 받은 토큰
+     * @param isAutoLogin 사용자가 자동 로그인 체크박스를 체크했는지 여부
+     */
+    fun saveTokens(tokenResponse: TokenResponse, isAutoLogin: Boolean) {
+        securePrefs.edit().apply {
+            putString(KEY_ACCESS_TOKEN, tokenResponse.accessToken)
+            putString(KEY_REFRESH_TOKEN, tokenResponse.refreshToken)
+            putBoolean(KEY_IS_AUTO_LOGIN, isAutoLogin) // 자동 로그인 설정 저장
+            apply()
+        }
+    }
+
+    /**
      * 저장된 Access Token을 반환합니다.
      */
     fun getAccessToken(): String? {
@@ -66,10 +81,15 @@ class AuthRepository(private val context: Context) {
     }
 
     /**
-     * 토큰이 유효한지 확인합니다 (Access Token 존재 여부만 체크)
+     * 토큰이 유효한지, 자동 로그인이 설정되어 있는지 확인
+     * 앱 시작 시 Splash 화면 등에서 이 함수를 호출하여 자동 로그인 여부를 판단
      */
     fun isAuthenticated(): Boolean {
-        return getAccessToken() != null
+        val hasToken = getAccessToken() != null
+        val isAutoLogin = securePrefs.getBoolean(KEY_IS_AUTO_LOGIN, false)
+
+        // 토큰이 있어도 사용자가 자동 로그인을 체크하지 않았다면 false 반환
+        return hasToken && isAutoLogin
     }
 
     /**
@@ -105,7 +125,8 @@ class AuthRepository(private val context: Context) {
     suspend fun exchangeCodeForToken(
         provider: String,
         code: String,
-        state: String?
+        state: String?,
+        isAutoLogin: Boolean
     ): TokenResponse {
 
         val response = when (provider) {
@@ -125,7 +146,7 @@ class AuthRepository(private val context: Context) {
 
         if (response.isSuccessful) {
             val tokens = response.body() ?: throw Exception("API returned empty body.")
-            saveTokens(tokens) // 획득한 토큰을 저장
+            saveTokens(tokens, true) // 획득한 토큰을 저장
             return tokens
         } else {
             val errorBody = response.errorBody()?.string() ?: "Unknown server error"

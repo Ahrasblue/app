@@ -77,8 +77,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     val tokenResponse: TokenResponse? = response.body()
 
                     if (tokenResponse != null) {
-                        // 1. 토큰을 AuthRepository에 안전하게 저장
-                        authRepository.saveTokens(tokenResponse)
+                        // 1. 토큰과 자동 로그인 여부를 AuthRepository에 저장
+                        val isAutoLogin = _isAutoLoginChecked.value ?: false
+                        authRepository.saveTokens(tokenResponse, isAutoLogin)
 
                         // 2. 로그인 성공 이벤트 발생 (UI 트리거)
                         _loginSuccess.value = true

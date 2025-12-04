@@ -9,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -173,6 +174,7 @@ fun InteractiveAuthButton(
             containerColor = containerColor,
             contentColor = contentColor
         ),
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
@@ -201,6 +203,7 @@ fun SocialLoginButton(
             containerColor = backgroundColor,
             contentColor = contentColor
         ),
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth().height(56.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
