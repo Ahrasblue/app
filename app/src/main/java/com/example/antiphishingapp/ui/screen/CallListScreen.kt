@@ -25,41 +25,80 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.antiphishingapp.R
 import com.example.antiphishingapp.theme.*
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.antiphishingapp.data.local.AppDatabase
-import com.example.antiphishingapp.data.local.SmsEntity
-import kotlinx.coroutines.flow.Flow
-import java.text.SimpleDateFormat
-import java.util.*
 
-// ------------------------------------
-// ViewModel 설정 (DB 연결용)
-// ------------------------------------
-class SmsListViewModel(database: AppDatabase) : ViewModel() {
-    // DB의 데이터를 실시간으로 감시하는 Flow
-    val smsListFlow: Flow<List<SmsEntity>> = database.smsDao().getAllRiskySms()
-}
+// 통화 기록의 각 대화 라인을 위한 데이터 클래스
+data class CallLog(
+    val timestamp: String,
+    val text: String
+)
 
-class SmsListViewModelFactory(private val context: android.content.Context) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(SmsListViewModel::class.java)) {
-            return SmsListViewModel(AppDatabase.getDatabase(context)) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
+// 전체 통화 카드 하나를 위한 데이터 클래스
+data class CallRecord(
+    val phoneNumber: String,
+    val callTime: String,
+    val logs: List<CallLog>,
+    val isRisky: Boolean
+)
+
+private val phishingKeywords = listOf(
+    "안전계좌","보안계좌","현금 전달","대포통장","계좌 이체","송금 요청",
+    "개인정보 확인","비밀번호 입력","인증번호 전송","송금","이체","입금","구속","형사처벌","압류","고소","체포",
+    "영장","계좌번호","비밀번호","인증번호","OTP","보안카드","검찰","검찰청","경찰","경찰청","금융감독원","금감원",
+    "법원","국세청","관세청","우체국","은행","카드사","통신사","긴급","즉시","24시간 이내","오늘 중","피의자",
+    "명의 도용","개인정보 유출","사건 번호","출석요구서","소환장","전화 주세요","연락 바랍니다","클릭","링크",
+    "앱 설치","프로그램 설치","대출","저금리","신용","한도","승인","연체","채무","미납","미수","정지","해지",
+    "택배","배송","상품권","쿠폰","당첨","경품","무료","계좌","벌금","확인요망","확인하세요","조회","인증"
+)
+
+// 샘플 통화 데이터
+private val rawCallData = listOf(
+    Triple("010-1234-5678", "PM 10:30", listOf(
+        CallLog("00:00", "즉시 송금 요망. 확인 부탁드립니다."),
+        CallLog("02:10", "계좌가 정지된 것으로 보여요.")
+    )),
+    Triple("010-1234-5678", "PM 09:30", listOf(
+        CallLog("01:30", "우체부 등기가 도착했는데 혹시 지금 댁에 계실까요?"),
+        CallLog("01:43", "특수범죄수사부 3팀 경감...")
+    )),
+    Triple("010-1234-5678", "PM 08:12", listOf(
+        CallLog("23:14", "긴급한 건이라서요.")
+    )),
+    Triple("010-1234-5678", "PM 04:55", listOf(
+        CallLog("04:20", "의심 계좌로 확인되어 연락드렸는데 시간 괜찮으실까요?")
+    )),
+    Triple("010-1234-5678", "PM 04:55", listOf(
+        CallLog("04:20", "의심 계좌로 확인되어 연락드렸는데 시간 괜찮으실까요?")
+    )),
+    Triple("010-1234-5678", "PM 04:55", listOf(
+        CallLog("04:20", "의심 계좌로 확인되어 연락드렸는데 시간 괜찮으실까요?")
+    )),
+    Triple("010-1234-5678", "PM 04:55", listOf(
+        CallLog("04:20", "의심 계좌로 확인되어 연락드렸는데 시간 괜찮으실까요?")
+    )),
+    Triple("010-1234-5678", "PM 04:55", listOf(
+        CallLog("04:20", "의심 계좌로 확인되어 연락드렸는데 시간 괜찮으실까요?")
+    )),
+    Triple("010-1234-5678", "PM 04:55", listOf(
+        CallLog("04:20", "의심 계좌로 확인되어 연락드렸는데 시간 괜찮으실까요?")
+    )),
+    Triple("010-1234-5678", "PM 04:55", listOf(
+        CallLog("04:20", "의심 계좌로 확인되어 연락드렸는데 시간 괜찮으실까요?")
+    ))
+)
+
+// 샘플 데이터를 CallRecord 객체로 변환
+private val sampleCallRecords = rawCallData.map { (phone, time, logs) ->
+    val fullContent = logs.joinToString(" ") { it.text }
+    CallRecord(
+        phoneNumber = phone,
+        callTime = time,
+        logs = logs,
+        isRisky = phishingKeywords.any { fullContent.contains(it) }
+    )
 }
 
 @Composable
-fun SmsListScreen() {
-    val context = LocalContext.current
-    val viewModel: SmsListViewModel = viewModel(factory = SmsListViewModelFactory(context))
-
-    // DB 데이터를 State로 변환 (데이터 변경 시 UI 자동 갱신)
-    val smsList by viewModel.smsListFlow.collectAsState(initial = emptyList())
-
+fun CallListScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -75,8 +114,8 @@ fun SmsListScreen() {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(smsList) { smsEntity ->
-                SmsCard(sms = smsEntity)
+            items(sampleCallRecords) { record ->
+                CallCard(record = record)
             }
         }
     }
@@ -175,16 +214,12 @@ private fun FilterBar() {
 }
 
 @Composable
-fun SmsCard(sms: SmsEntity) {
+fun CallCard(record: CallRecord) {
     val cardTextStyle = TextStyle(
         fontFamily = Pretendard,
         fontWeight = FontWeight.SemiBold,
         fontSize = 16.sp
     )
-
-    // 날짜 변환 (Long -> String)
-    val dateFormat = SimpleDateFormat("a hh:mm", Locale.US) // 예: PM 10:30
-    val timeString = dateFormat.format(Date(sms.receivedDate))
 
     Row(
         modifier = Modifier
@@ -197,8 +232,8 @@ fun SmsCard(sms: SmsEntity) {
         verticalAlignment = Alignment.Top
     ) {
         Image(
-            painter = painterResource(id = R.drawable.pic01),
-            contentDescription = "Message Icon",
+            painter = painterResource(id = R.drawable.pic02),
+            contentDescription = "Call Icon",
             modifier = Modifier.size(32.dp),
             colorFilter = ColorFilter.tint(Primary900)
         )
@@ -209,24 +244,36 @@ fun SmsCard(sms: SmsEntity) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = sms.sender,
+                    text = record.phoneNumber,
                     style = cardTextStyle,
                     color = Grayscale900
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = timeString,
+                    text = record.callTime,
                     style = cardTextStyle,
                     color = Grayscale900,
                     textAlign = TextAlign.Right
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
-            HighlightedText(
-                text = sms.content,
-                keywords = sms.keywords,
-                style = cardTextStyle.copy(color = Grayscale900)
-            )
+            // 각 대화 기록을 타임라인으로 표시
+            Column {
+                record.logs.forEach { log ->
+                    Row {
+                        Text(
+                            text = log.timestamp,
+                            style = cardTextStyle.copy(color = Grayscale900)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        HighlightedText(
+                            text = log.text,
+                            isRisky = record.isRisky,
+                            style = cardTextStyle.copy(color = Grayscale900)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -234,17 +281,16 @@ fun SmsCard(sms: SmsEntity) {
 @Composable
 fun HighlightedText(
     text: String,
-    keywords: List<String>,
+    isRisky: Boolean,
     style: TextStyle,
 ) {
-    if (keywords.isEmpty()) {
+    if (!isRisky) {
         Text(text = text, style = style)
         return
     }
 
     val annotatedString = buildAnnotatedString {
-        val regexPattern = keywords.joinToString("|") { Regex.escape(it) }
-        val regex = Regex(regexPattern, RegexOption.IGNORE_CASE)
+        val regex = Regex(phishingKeywords.joinToString("|"))
         val matches = regex.findAll(text)
         var lastIndex = 0
 
@@ -266,8 +312,8 @@ fun HighlightedText(
 
 @Preview(showBackground = true)
 @Composable
-fun SmsListScreenPreview() {
+fun CallListScreenPreview() {
     AntiPhishingAppTheme {
-        SmsListScreen()
+        CallListScreen()
     }
 }

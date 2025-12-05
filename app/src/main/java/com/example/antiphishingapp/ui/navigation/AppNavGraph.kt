@@ -20,6 +20,7 @@ import com.example.antiphishingapp.ui.screen.TitleScreen
 import com.example.antiphishingapp.ui.screen.LoginScreen
 import com.example.antiphishingapp.ui.screen.SmsListScreen
 import com.example.antiphishingapp.viewmodel.AuthViewModel
+import com.example.antiphishingapp.ui.screen.CallListScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController, startRoute: String) {
@@ -85,6 +86,11 @@ fun AppNavGraph(navController: NavHostController, startRoute: String) {
         // 문자 내역 확인 화면
         composable("smsList") {
             SmsListScreen()
+        }
+
+        // 전화 내역 확인 화면
+        composable("callList") {
+            CallListScreen()
         }
 
         // 회원가입 화면

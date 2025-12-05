@@ -101,7 +101,7 @@ fun DetectHistoryScreen(
                 title = "전화 내역 확인",
                 description = "수신한 전화에 대한\n탐지 기록을 확인할 수 있습니다.",
                 iconRes = R.drawable.call_history,
-                onClick = { /* TODO: 전화 내역 확인 로직으로 이동 */ }
+                onClick = { navController.navigate("callList") }
             )
 
             // 공통 HelpSection
